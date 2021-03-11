@@ -1,0 +1,7 @@
+__pycache__/
+venv/
+trained_models/**
+data/**
+support/**
+.DS_Store
+credentials.py
