@@ -3,15 +3,16 @@
 The Wing Man is a automatic tinder CLI which knows "your type". The program runs on top of Tinder web.
 It includes training, testing and inference logic (under development), meaning once you train the model to know which type of looks you find attractive, it swipes possible partners accordingly and automatically.
 
+## Dependencies
+
+* Requires Facebook account
+* Requires Tinder account linked to Facebook account
+* Requires Google Chrome web browser for desktop (>= 89.0)
+
 ## Installation
 
-All required packages are installed through anaconda
-
-* ``conda create --name <env_name>``
-* ``conda activate <env_name>``
-
-
-Make sure you have the adequate chromedriver for your OS
+* TODO: Add virtual environment construction isntructions
+* Make sure you have the adequate chromedriver for your OS
 
 ## Usage
 
