@@ -11,17 +11,20 @@ It includes training, testing and inference logic (under development), meaning o
 
 ## Installation
 
-* TODO: Add virtual environment construction isntructions
-* Make sure you have the adequate chromedriver for your OS
+* conda create --name wingman python=3.8
+* conda activate wingman
+* pip install -r requirements.txt 
+
+Make sure you have the adequate [chromedriver](https://chromedriver.chromium.org/) for your OS
 
 ## Usage
 
-``python main.py {train, test, infer, data}``
+``python main.py {manual, train, test, auto}``
 
-- data: create your own dataset from tinder profiles
-- train: train a model on your dataset, saves model to trained_models/
-- test: preview model of your choice on test dataset
-- infer: automatically evaluate all pictures from a profile and swipe left or right accordingly
+- manual: swipe manually and label accordingly. set --just-data #TODO
+- train: TODO
+- test: TODO
+- auto: TODO
 
 See ``python main.py -h``for more info
 

@@ -3,5 +3,6 @@ venv/
 trained_models/**
 data/**
 support/**
+__temp__/
 .DS_Store
 credentials.py

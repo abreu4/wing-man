@@ -19,51 +19,41 @@ def main():
 	
 	parser = argparse.ArgumentParser(description='Train a model to pick the right partners for you.')
 
-	parser.add_argument("mode", type=str, choices=["train", "test", "infer", "data"], help="choose between train, infer and data modes")
-	parser.add_argument("--train-data-dir", type=str, default=_DATA_TRAIN, help="imagenet-style train data directory; defaults to 'data/train'")
-	parser.add_argument("--test-data-dir", type=str, default=_DATA_TEST, help="imagenet-style test data directory; defaults to 'data/test'")
-	parser.add_argument("--save-data-dir", type=str, default=_DATA, help="directory in which the two class folders (left and right) will be created; defaults to 'data/raw'")
-
-
+	parser.add_argument("mode", type=str, choices=["manual", "train", "test", "auto"], help="TODO")
+	parser.add_argument('--just-data', action='store_true')
+	
 	args = parser.parse_args()
 
 	f = Figlet(font='slant')
 	print(f.renderText('The Wing Man'))
 
-	if args.mode == "train":
-		print("-> Now entering training mode")
-		print("Current training folder: " + _DATA_TRAIN)
-		predictor = Libido(train_data_dir=_DATA_TRAIN, pretrained=True, feature_extraction=True)
-		predictor.train_model()
 
-	elif args.mode == "test":
-		tester = Libido(pretrained=True, feature_extraction=True)
-		tester.show_pretrained_model(CURRENT_PREDICTION_MODEL)
+	# TODO: train mode
+	# TODO: test mode
 
-	elif args.mode == "infer" or args.mode == "data":
+	print("Logging into your account...")
+	swiper = Swiper()
 
-		swiper = Swiper()
+	# Log into facebook
+	if swiper.fb_login():
 
-		print("Logging into your account...")
-		# Log into facebook
-		if swiper.fb_login():
+		# If valid, log into Tinder web
+		if swiper.tinder_login:
 
-			# If valid, Tinder login
-			if swiper.tinder_login:
+			if args.mode == "manual":
 
-				if args.mode == "infer":
-					print("Now entering evaluation mode")
-				
-				if args.mode == "data":
-					print("Now entering data extraction mode")
-					swiper.data_extraction()
-					input()
+				print("Press 1 to swipe left, 2 to swipe right, any other key to ignore current profile")
+				swiper.manual_swipe(just_data_extraction=args.just_data)
 
-			else:
-				print('Tinder login failed')
+			elif args.mode == "auto":
+				# TODO
+				return
 
 		else:
-			print('Facebook login failed')
+			print('Tinder login failed')
+
+	else:
+		print('Facebook login failed')
 
 	exit()
 
