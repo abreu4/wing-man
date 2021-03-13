@@ -5,16 +5,6 @@ from pyfiglet import Figlet
 from libido import Libido
 from swiper import Swiper
 
-CURRENT_PREDICTION_MODEL = 'trained_models/5fbd352c-adac-11ea-89e4-cc2f71f824a0.pth'
-DATA = 'data/raw'
-DATA_TEST = 'data/test'
-DATA_TRAIN = 'data/train'
-
-# Temporary test folders
-_DATA_TRAIN = 'data/sorted'
-_DATA_TEST = 'data/sorted/test'
-_DATA = ''
-
 def main():
 	
 	parser = argparse.ArgumentParser(description='Train a model to pick the right partners for you.')
@@ -24,11 +14,14 @@ def main():
 	
 	args = parser.parse_args()
 
+	# Print a cute title
 	f = Figlet(font='slant')
 	print(f.renderText('The Wing Man'))
 
 
 	# TODO: train mode
+	if args.mode == "train":
+		
 	# TODO: test mode
 
 	print("Logging into your account...")

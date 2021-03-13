@@ -25,19 +25,23 @@ import os
 import copy
 import uuid
 
+MODELS_DIRECTORY = "trained_models/"
+TRAIN_DATA_DIR = "data/train/"
 
 class Libido:
 
     # TODO: - Change data/sorted to meaningful directory once testing is done
-    def __init__(self, train_data_dir = 'data/sorted', pretrained=True, feature_extraction=True):
+    def __init__(self, train_data_dir=TRAIN_DATA_DIR, pretrained=True, feature_extraction=True):
 
         """ Assertions """
         # TODO
+        if not os.path.exists(MODELS_DIRECTORY): os.mkdir(MODELS_DIRECTORY)
+        if not os.path.exists(TRAIN_DATA_DIR): os.mkdir(TRAIN_DATA_DIR)
 
         """ Variables """
 
         # Paths
-        self.savepath = "trained_models/"
+        self.savepath = MODELS_DIRECTORY
         self.trainable_model_path = str(uuid.uuid1()) + ".pth"
         self.data_dir = train_data_dir
 
