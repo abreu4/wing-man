@@ -1,7 +1,8 @@
 __pycache__/
-venv/
+env/
 trained_models/**
 data/**
+data_test/**
 support/**
 __temp__/
 .DS_Store

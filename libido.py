@@ -26,17 +26,14 @@ import copy
 import uuid
 
 MODELS_DIRECTORY = "trained_models/"
-TRAIN_DATA_DIR = "data/train/"
 
 class Libido:
 
     # TODO: - Change data/sorted to meaningful directory once testing is done
-    def __init__(self, train_data_dir=TRAIN_DATA_DIR, pretrained=True, feature_extraction=True):
+    def __init__(self, train_data_dir, pretrained=True, feature_extraction=True):
 
         """ Assertions """
-        # TODO
         if not os.path.exists(MODELS_DIRECTORY): os.mkdir(MODELS_DIRECTORY)
-        if not os.path.exists(TRAIN_DATA_DIR): os.mkdir(TRAIN_DATA_DIR)
 
         """ Variables """
 
@@ -73,7 +70,7 @@ class Libido:
             ]),
         }
 
-        # Dataset loader
+        # Dataset loaders
         self.image_datasets = {x: datasets.ImageFolder(os.path.join(self.data_dir, x), self.data_transforms[x]) for x in ['train', 'test']}
         self.dataloaders = {x: torch.utils.data.DataLoader(self.image_datasets[x], batch_size=self.batch_size, shuffle=True, num_workers=4) for x in
                        ['train', 'test']}
@@ -82,7 +79,6 @@ class Libido:
         self.class_names = self.image_datasets['train'].classes
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        #print("Class_names -> {}".format(self.class_names))
         print("Using CUDA? {} - {}".format(torch.cuda.is_available(), self.device))
 
         # Initialize model
@@ -94,15 +90,9 @@ class Libido:
 
     def train_model(self):
 
-        """
-        # Re-shape the model according to our parameters and number of classes
-        
-        model_ft = models.resnet34(pretrained=self.pretrained)
-        self.set_parameter_requires_grad(model_ft, feature_extraction=self.feature_extraction)
-        num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, len(self.class_names))
-        model_ft = model_ft.to(self.device)
-        """
+    """ Train a model """
+    """ Assumes self.data_dir containes train/left, train/right, test/left, test/right """
+    """ You can obtain this format by using data.setup_entire_dataset """
 
         # Define loss criteria
         criterion = nn.CrossEntropyLoss()
@@ -120,17 +110,20 @@ class Libido:
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     def _train_model(self, model, criterion, optimizer, scheduler, num_epochs=25):
+        
         since = time.time()
 
         best_model_wts = copy.deepcopy(model.state_dict())
         best_acc = 0.0
 
         for epoch in range(num_epochs):
+
             print('Epoch {}/{}'.format(epoch, num_epochs - 1))
             print('-' * 10)
 
             # Each epoch has a training and validation phase
             for phase in ['train', 'test']:
+                
                 if phase == 'train':
                     model.train()  # Set model to training mode
                 else:
@@ -148,7 +141,7 @@ class Libido:
                     optimizer.zero_grad()
 
                     # forward
-                    # track history if only in train
+                    # track history if training
                     with torch.set_grad_enabled(phase == 'train'):
                         outputs = model(inputs)
                         _, preds = torch.max(outputs, 1)
@@ -162,6 +155,7 @@ class Libido:
                     # statistics
                     running_loss += loss.item() * inputs.size(0)
                     running_corrects += torch.sum(preds == labels.data)
+                
                 if phase == 'train':
                     scheduler.step()
 
@@ -179,9 +173,8 @@ class Libido:
             print()
 
         time_elapsed = time.time() - since
-        print('Training complete in {:.0f}m {:.0f}s'.format(
-            time_elapsed // 60, time_elapsed % 60))
-        print('Best val Acc: {:4f}'.format(best_acc))
+        print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
+        print('Best accuracy: {:4f}'.format(best_acc))
 
         # Save after training
         torch.save(best_model_wts, os.path.join(self.savepath, self.trainable_model_path))

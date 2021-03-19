@@ -1,10 +1,13 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# A library for image data treatment
+# A library for image data preprocessing
 #
-# » convert: converts all images to .jpg
 # » rename: rename all files in crescent order (1,2,...,n)
-# » remove_duplicates: removes duplicates using md5 hash criteria
-# » keep_only_pics_with_people: *undergoing tests*
+# » convert: converts all images to .jpg
+# » remove_duplicates: removes duplicates (md5 hash)
+# » crop_to_squares: crop pictures to squares
+# » keep_only_pics_with_people: (TODO) keep only images with people
+# » resize: resize and duplicate files to new folder using custom dimensions
+# » split_dataset: create train and test folders with given ratio of instances
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -12,56 +15,55 @@ import os
 import cv2
 import time
 import subprocess
-import tkinter as tk
 from PIL import ImageTk, Image
-from shutil import move, copy
-
+from shutil import move, copy, rmtree, copytree
 from utilities import *
-from detector import DetectorAPI
 
 
 def rename(folder):
 
-    """ Renames files in folder to exact numeric ascending order """
+    """ Renames files in folder to exact numeric ascending order (inplace) """
+    """ TODO: Ensure duplicates get handled correctly """
 
     assert os.path.isdir(folder), "Invalid data folder"
+    imagefiles = __get_image_names_in(folder)
+    assert len(imagefiles) > 0, "No pictures in folder"
 
-    # get all the files that are not folder in the data folder (images)
-    imagefiles = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and f.endswith('.jpg')]
-    imagefiles.sort(key=filenumber)
-
-    # rename according to index
-    for i in range(len(imagefiles)):
-        source = os.path.join(folder, imagefiles[i])
-        extension = os.path.splitext(imagefiles[i])[1]
+    counter = 0
+    # Rename according to index
+    for i, img in enumerate(imagefiles):
+        source = os.path.join(folder, img)
+        extension = os.path.splitext(img)[1]
         destination = os.path.join(folder, str(i)+extension)
+        
         os.rename(source, destination)
+        counter ++ 
 
-        print("Renamed "+str(imagefiles[i])+" -> "+str(i)+extension)
+    print("Renamed "+str(counter)+" files in "+folder)
 
-    return 1
+    return True
 
 
 def convert(folder):
 
-    """ Converts every picture inside folder to JPEG """
+    """ Converts every picture inside folder to JPEG (inplace) """
 
     assert os.path.isdir(folder), "Invalid data folder"
 
     for filename in os.listdir(folder):
         if filename.endswith('.webp') or filename.endswith('.png'):
 
-            # creating jpg
+            # Create jpg
             imgpath = os.path.join(folder, filename)
             im = Image.open(imgpath).convert("RGB")
             im.save(os.path.join(folder, os.path.splitext(filename)[0] + '.jpg'), "jpeg")
 
-            # deleting duplicate in webp
+            # Delete webp duplicates
             os.remove(imgpath)
 
             print('Converted '+str(filename))
 
-    return 1
+    return True
 
 
 def remove_duplicates(folder):
@@ -69,66 +71,49 @@ def remove_duplicates(folder):
     """ Removes duplicate file entries inside folder """
 
     assert os.path.isdir(folder), "Invalid data folder"
+    imagefiles = __get_image_names_in(folder)
+    assert len(imagefiles) > 1, "No duplicates in folder"
+
     duplicates = []
     hash_keys = []
 
-    for filename in os.listdir(folder):
-        imgpath = os.path.join(folder, filename)
-        if os.path.isfile(imgpath):
-            hax = file_hash(imgpath)
-            if hax not in hash_keys:
-                hash_keys.append(hax)
-            else:
-                duplicates.append(imgpath)
+    for image in imagefiles:
+
+        source = os.path.join(folder, image)
+        hax = file_hash(source)
+
+        if hax not in hash_keys: hash_keys.append(hax)
+        else: duplicates.append(source)
 
     # Remove all the duplicates
     [os.remove(copycat) for copycat in duplicates]
 
     print('Removed '+str(len(duplicates))+' duplicates')
-    return 1
+    return True
 
 def crop_to_squares(folder):
     
-    """ Crops and OVERWRITES images in 'folder' to central square """
+    """ Crops images in 'folder' to central square (inplace) """
 
-    piclist = [picture for picture in os.listdir(folder) if not os.path.isdir(picture)]
-    # print(piclist)
+    assert os.path.isdir(folder), "Invalid data folder"
+    imagefiles = __get_image_names_in(folder)
+    assert len(imagefiles) > 0, "No pictures in folder"
 
-    # TODO: - For this to work, 'piclist' must have assertions for image retrieval rather than any folders and files
-    if len(piclist) < 1:
-        print("\tNo pictures in source directory. Aborting...")
-        return
-
-    for i, image in enumerate(piclist):
+    for i, image in enumerate(imagefiles):
 
         imagepath = os.path.join(folder, image)
-
-        # fig = plt.figure(figsize=(10,10))
-
-        """
-        fig.add_subplot(211)
-        plt.imshow(image)
-        """
         image = Image.open(imagepath)
+        
         cropped_image = _crop_to_square(image)
-
-        """
-        fig.add_subplot(212)
-        plt.imshow(image)
-        plt.show()
-        """
-
         cropped_image.save(imagepath)
+
+    return True
 
 def keep_only_pics_with_people(folder):
 
     """ TODO not really removing anything yet, still under testing """
-
+    """
     print("Trimming dataset...")
-
-    model_path = r"C:\Users\Tiago\PycharmProjects\thewingman\support\faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb"
-    odapi = DetectorAPI(path_to_ckpt=model_path)
-    threshold = 0.7
 
     # List all pictures in folder
     images = [os.path.join(folder, i) for i in os.listdir(folder)
@@ -160,11 +145,12 @@ def keep_only_pics_with_people(folder):
             found = False
 
     print("Kept %d images" % counter)
+    """
 
 def resize(src_folder, des_folder, width=640, height=800):
 
     """ Normalizes src folder images to width*height into des folder """
-    """ Assumes 'src' folder's images are '.jpg' format """
+    """ Assumes src folder's images are '.jpg' format """
 
     print('\nInitializing resizing subroutine')
 
@@ -201,18 +187,20 @@ def resize(src_folder, des_folder, width=640, height=800):
     return 1
 
 
-def split(datafolder, train_test_ratio):
+def split_dataset(folder, train_test_ratio, class_names=["left", "right"]):
 
     """
-    Given a folder with subfolders for each class, copies and splits data across a 'test' and 'train' folder according to 'train_test_ratio'
-    
+    Given a folder with subfolders for each class, copies and splits data across a 'test' and 'train' folder according to 'train_test_ratio' (0,1)
+    Works for any 'class_names'; Default is left/right for current project.
+
     » In:
-    datafolder
+    folder
         |- class_x
         |- class_y
+        |- ...
 
     » Out:
-    datafolder
+    folder
         |- class_x
         |- class_y
         |- train
@@ -232,10 +220,11 @@ def split(datafolder, train_test_ratio):
     """
 
     # Class folder names
-    folders = [d for d in os.listdir(datafolder) if not d[0] == '.' and 'pycache' not in d and not os.path.isfile(d) ]
+    folders = [d for d in os.listdir(folder) if d in class_names]
+    assert len(folders) == len(class_names), "Couldn't find specified class folders"
 
     # Create 'train' and 'test' directories
-    train_path, test_path = __make_train_test_dir(datafolder)
+    train_path, test_path = __make_train_test_dir(folder)
 
     # Work with one class folder at a time
     for current_class in folders:
@@ -247,7 +236,7 @@ def split(datafolder, train_test_ratio):
         class_train_path, class_test_path = __spread_class_folder((train_path, test_path), current_class)
 
         # List all source image files
-        image_list = os.listdir(os.path.join(datafolder, current_class))
+        image_list = os.listdir(os.path.join(folder, current_class))
         random.shuffle(image_list)
 
         # Extract relative proportions
@@ -260,31 +249,90 @@ def split(datafolder, train_test_ratio):
         # Copy to "train/current_class"
         for index in range(train_size):
             image_name = image_list.pop()
-            image_source = __get_image_source_path(datafolder, current_class, image_name)
+            image_source = __get_image_source_path(folder, current_class, image_name)
             image_destination = os.path.join(class_train_path, image_name)
             copy(image_source, image_destination)
 
         # Copy to "test/current_class"
         for index in range(test_size):
             image_name = image_list.pop()
-            image_source = __get_image_source_path(datafolder, current_class, image_name)
+            image_source = __get_image_source_path(folder, current_class, image_name)
             image_destination = os.path.join(class_test_path, image_name)
             copy(image_source, image_destination)
 
     return True
 
+### Data preprocessing pipeline ###
+
+def setup_entire_dataset(folder, train_test_ratio=0.8):
+
+    """ 
+    Given a folder with class subfolders
+        Preprocess data in each class subfolder
+        Copy and populate train and test folders
+    Delete original class subfolders
+
+    WARNING: Alters the data folder inplace!
+    """
+
+    class_folders = os.listdir(folder)
+
+    # Preprocess data in each class folder
+    for f in class_folders:
+
+        subfolder = os.path.join(folder, f)
+        
+        assert rename(subfolder) == True, "Failed while renaming files"
+        assert convert(subfolder) == True, "Failed while converting files to jpg"
+        assert remove_duplicates(subfolder) == True, "Failed while removing duplicates"
+        assert crop_to_squares(subfolder) == True, "Failed while cropping pictures to squares"
+        # assert keep_only_pics_with_people(folder) == True, "Failed while removing pictures with no people"
+
+    # Split class folders into train/test folders
+    assert split_dataset(folder, train_test_ratio) == True, "Failed while splitting dataset into train/test folders"
+
+    # Remove original class folders
+    for f in class_folders:
+        rmtree(os.path.join(folder, f))
+
+    return True
+
+def new_training_dataset(folder, train_test_ratio=0.8):
+
+    sorted_folder = "./data_sorted/"
+    
+    breakpoint()
+    # Remove old sorted folder
+    if os.path.isdir(sorted_folder): rmtree(sorted_folder) 
+
+    # Create sorted folder and copy original data to it
+    copytree(folder, sorted_folder)
+
+    # Preprocess data
+    setup_entire_dataset(sorted_folder)
+
+    return True
+        
+
+# Preprocess left and right folders ()
+
+
 ### Helper functions ###
 
-def __get_image_source_path(datafolder, class_name, file):
-	return os.path.join(os.path.join(datafolder, class_name), file)
+def __get_image_names_in(folder):
+    return [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and (f.endswith('.jpg') or f.endswith('.webp') or f.endswith('.png'))]
+
+
+def __get_image_source_path(folder, class_name, file):
+	return os.path.join(os.path.join(folder, class_name), file)
 
 def __get_image_destination_path(train_test_path, folder, file):
     return os.path.join(os.path.join(train_test_path, folder), file)
 
-def __make_train_test_dir(datafolder):
-    # Returns path relative to datafolder
+def __make_train_test_dir(folder):
+    # Returns path relative to folder
 
-    paths = [os.path.join(datafolder, x) for x in ['train', 'test']]
+    paths = [os.path.join(folder, x) for x in ['train', 'test']]
 
     try:
         [os.mkdir(path) for path in paths]

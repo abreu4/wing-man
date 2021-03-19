@@ -9,6 +9,7 @@ It includes training, testing and inference logic (under development), meaning o
 * Requires Tinder account linked to Facebook account
 * Requires Google Chrome web browser for desktop (>= 89.0)
 
+- (Tkinter - REMOVE), pytorch, opencv
 ## Installation
 
 * conda create --name wingman python=3.8

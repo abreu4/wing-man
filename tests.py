@@ -1,11 +1,46 @@
-# 
 from utilities import *
+import data
 
-RAW_URL_BLOCK ='background-image: url("https://images-ssl.gotinder.com/5cb0bdcebce5dd150037ed5a/640x800_226a2e8b-eed7-48a5-9154-ff5ce8c6a744.jpg"); background-position: 50.4587% 0%; background-size: 120.527%;'
-DESTINATION = '__test__/'
+TOY_FOLDER = "./data_test/"
+REAL_FOLDER ="./data/"
 
-def test_save_picture_from_url_block(dest, raw):
-	a = save_picture_from_url_block(dest, raw)
-	print(a)
+# Data processing module tests
 
-test_save_picture_from_url_block(DESTINATION, RAW_URL_BLOCK)
+def test_rename(folder=TOY_FOLDER): 
+	data.rename(folder)
+	print("Passed rename() test")
+
+def test_convert(folder=TOY_FOLDER):
+	data.convert(folder)
+	print("Passed convert() test")
+
+def test_remove_duplicates(folder=TOY_FOLDER):
+	data.remove_duplicates(folder)
+	print("Passed remove_duplicates() test")
+
+def test_crop_to_squares(folder=TOY_FOLDER):
+	data.crop_to_squares(folder)
+	print("Passed crop_to_squares() test")
+
+def test_split_dataset(folder=TOY_FOLDER):
+	data.split_dataset(folder, 0.8)
+	print("Passed split_dataset() test")
+
+# data processing pipeline
+def test_setup_entire_dataset(folder=TOY_FOLDER):
+	data.setup_entire_dataset(folder, 0.8)
+	print("Successfully prepared entire dataset")
+
+# full data setup pipeline
+def test_new_training_dataset(folder=REAL_FOLDER):
+	data.new_training_dataset(folder)
+
+if __name__ == '__main__':
+	"""
+	test_rename()
+	test_convert()
+	test_remove_duplicates()
+	test_crop_to_squares()
+	test_split_dataset()
+	"""
+	test_new_training_dataset()

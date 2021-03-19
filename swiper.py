@@ -1,7 +1,6 @@
 import os
 import time
 import shutil
-import tkinter
 import torch
 import platform
 import credentials
@@ -13,14 +12,9 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 
-# TODO: Useful code, delete
-# ActionChains(self.driver).send_keys(Keys.ARROW_LEFT).perform()
-# ActionChains(self.driver).send_keys(Keys.ARROW_RIGHT).perform()
-# time.sleep(0.5)
-
 TMP_IMAGE_DIR = "./__temp__"
-DATA_DIR = './data/' # Data directory where your categories folders will be saved
-LEFT_DIR = os.path.join(DATA_DIR, "left") # Left category folder
+DATA_DIR = './data/' # Data directory where your categories folders will be created
+LEFT_DIR = os.path.join(DATA_DIR, "left") # Left category folder, to save left swiped pictures
 RIGHT_DIR = os.path.join(DATA_DIR, "right") # Right category folder
 
 class Swiper():
@@ -93,74 +87,6 @@ class Swiper():
 
         print("Ready to start swiping :)")
         return True
-
-    """
-    def smart_swipe(self, model, data_transform):
-
-        # Takes prediction model as input
-        # Evaluates pictures in Tinder profile
-        # and swipes accordingly
-
-        self.model = model
-        self.model.eval()
-
-        with torch.no_grad():
-
-            while True:
-
-                # Loop until profile is found
-                found_profile = False
-                done = False
-                while not found_profile:
-                    try:
-                        found_profile = self.driver.find_elements_by_class_name("react-swipeable-view-container")
-                    except NoSuchElementException:
-                        pass
-
-                # Find the picture block
-                image_blocks = self.driver.find_elements_by_xpath('//*[@class="recCard Ov(h) Cur(p) W(100%) Bgc($c-placeholder) StretchedBox Bdrs(8px) CenterAlign--ml Toa(n) active"]//*[@class="react-swipeable-view-container"]//*[@data-swipeable="true"]')
-
-                # Iterates through each of the image blocks
-                for i in range(len(image_blocks)):
-
-                    # Loops until picture link is found
-                    current_picture = None
-                    while current_picture is None:
-                        
-                        try:
-                            current_picture = self.driver.find_element_by_xpath('//*[@class="recCard Ov(h) Cur(p) W(100%) Bgc($c-placeholder) StretchedBox Bdrs(8px) CenterAlign--ml Toa(n) active"]//*[@class="react-swipeable-view-container"]//*[@aria-hidden="false"]//*[@class="Bdrs(8px) Bgz(cv) Bgp(c) StretchedBox"]')
-                        except NoSuchElementException:
-                            pass
-
-                        # Extract picture
-                        raw_link = current_picture.get_attribute('style')  # Get the full style block where link is embedded
-                        link = re.search("(?P<url>https?://[^\s'\"]+)", raw_link).group("url")  # Extract url string from block
-                        filename = urllib.parse.urlparse(link).path
-                        new_filename = random_string()+os.path.splitext(link_path)[1]
-                        full_image_path_on_device = os.path.join(TMP_IMAGE_DIR, new_filename)
-                        full_image_path_on_device, _ = urllib.request.urlretrieve(link, full_image_path_on_device)  # TODO: Find out what this function is returning and add fail safes
-
-                        # Convert it to Pillow format
-                        image_to_predict = get_pillow_image(data_transform, DEBUG_IMAGE)
-
-                        # Evaluate picture
-                        # https://stackoverflow.com/questions/50063514/load-a-single-image-in-a-pretrained-pytorch-net
-                        outputs = self.model(image_to_predict)
-                        _ , pred = torch.max(outputs, 1)
-
-                        print(f"result: {outputs}")
-
-                        # TODO: store obtained left and right swipe probabilities (don't max out output)
-                        # TODO: delete picture after inference
-
-                        #np.argmax(model_ft(image_loader(data_transforms, $FILENAME)).detach().numpy())
-                        #_, preds = torch.max(outputs, 1)
-
-                    # Jump to the next picture
-                    ActionChains(self.driver).send_keys(' ').perform()  # moving toward next picture
-
-            return 1
-    """
 
     def manual_swipe(self, just_data_extraction=False):
 

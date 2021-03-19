@@ -22,6 +22,17 @@ def main():
 	# TODO: train mode
 	if args.mode == "train":
 		
+		# Prepare dataset
+		#assert os is dir data_sorted, else run the sorting algo
+
+
+		# Load deep learning model class
+		libido = Libido(train_data_dir)
+
+
+		# Train model on dataset
+		# libido.train...
+
 	# TODO: test mode
 
 	print("Logging into your account...")
