@@ -1,10 +1,11 @@
 from utilities import *
 import data
+import Libido
 
 TOY_FOLDER = "./data_test/"
 REAL_FOLDER ="./data/"
 
-# Data processing module tests
+""" Data processing module tests """
 
 def test_rename(folder=TOY_FOLDER): 
 	data.rename(folder)
@@ -35,6 +36,9 @@ def test_setup_entire_dataset(folder=TOY_FOLDER):
 def test_new_training_dataset(folder=REAL_FOLDER):
 	data.new_training_dataset(folder)
 
+""" Deep learning model tests """
+#def test
+
 if __name__ == '__main__':
 	"""
 	test_rename()
@@ -42,5 +46,5 @@ if __name__ == '__main__':
 	test_remove_duplicates()
 	test_crop_to_squares()
 	test_split_dataset()
-	"""
 	test_new_training_dataset()
+	"""

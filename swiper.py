@@ -12,16 +12,17 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 
-TMP_IMAGE_DIR = "./__temp__"
-DATA_DIR = './data/' # Data directory where your categories folders will be created
-LEFT_DIR = os.path.join(DATA_DIR, "left") # Left category folder, to save left swiped pictures
-RIGHT_DIR = os.path.join(DATA_DIR, "right") # Right category folder
-
 class Swiper():
 
-    def __init__(self):
+    def __init__(self, data_dir):
 
-        for directory in [TMP_IMAGE_DIR, DATA_DIR, LEFT_DIR, RIGHT_DIR]:
+        if not os.path.isdir(data_dir): os.mkdir(data_dir)
+
+        TMP_IMAGE_DIR = "./__temp__" # to store limbo pictures (while user hasn't swiped right or left)
+        LEFT_DIR = os.path.join(data_dir, "left") # Left category folder, to save left swiped pictures
+        RIGHT_DIR = os.path.join(data_dir, "right") # Right category folder
+
+        for directory in [TMP_IMAGE_DIR, LEFT_DIR, RIGHT_DIR]:
             if not os.path.exists(directory):
                 os.mkdir(directory)
                 print(f"Created {directory} successfully")

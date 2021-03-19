@@ -25,20 +25,18 @@ import os
 import copy
 import uuid
 
-MODELS_DIRECTORY = "trained_models/"
-
 class Libido:
 
-    # TODO: - Change data/sorted to meaningful directory once testing is done
-    def __init__(self, train_data_dir, pretrained=True, feature_extraction=True):
+
+    def __init__(self, train_data_dir, trained_models_dir, pretrained=True, feature_extraction=True):
 
         """ Assertions """
-        if not os.path.exists(MODELS_DIRECTORY): os.mkdir(MODELS_DIRECTORY)
+        if not os.path.exists(trained_models_dir): os.mkdir(trained_models_dir)
 
         """ Variables """
 
         # Paths
-        self.savepath = MODELS_DIRECTORY
+        self.savepath = trained_models_dir
         self.trainable_model_path = str(uuid.uuid1()) + ".pth"
         self.data_dir = train_data_dir
 
@@ -49,7 +47,7 @@ class Libido:
         self.feature_extraction = feature_extraction
 
         self.initial_learning_rate = 0.011
-        self.learning_rate_decay = 0.001
+        self.learning_rate_decay = 0.0005
 
         # Dataset transformations
         # -> Augmentation and normalization for training
@@ -88,11 +86,15 @@ class Libido:
         self.model_ft.fc = nn.Linear(num_ftrs, len(self.class_names))
         self.model_ft = self.model_ft.to(self.device)
 
-    def train_model(self):
 
-    """ Train a model """
-    """ Assumes self.data_dir containes train/left, train/right, test/left, test/right """
-    """ You can obtain this format by using data.setup_entire_dataset """
+    def train_model(self, num_epochs=25):
+
+        """ Train a model """
+        """ Assumes self.data_dir containes train/left, train/right, test/left, test/right """
+        """ You can obtain this format by using data.setup_entire_dataset """
+
+        # Reassign intrinsic parameters
+        self.num_epochs = num_epochs
 
         # Define loss criteria
         criterion = nn.CrossEntropyLoss()
@@ -108,6 +110,7 @@ class Libido:
         self.model_ft = self._train_model(self.model_ft, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=self.num_epochs)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
     def _train_model(self, model, criterion, optimizer, scheduler, num_epochs=25):
         
@@ -189,6 +192,7 @@ class Libido:
         # Return model
         return model
 
+
     def imshow(self, inp, title=None):
 
         """Imshow for Tensor"""
@@ -203,14 +207,17 @@ class Libido:
             plt.title(title)
         plt.pause(0.001) # pause a bit so that plots are updated
 
+
     def visualize_model(self, model, num_images=6):
 
         was_training = model.training
         model.eval()
+
         images_so_far = 0
         fig = plt.figure()
 
         with torch.no_grad():
+            
             for i, (inputs, labels) in enumerate(self.dataloaders['test']):
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
@@ -228,24 +235,35 @@ class Libido:
                     if images_so_far == num_images:
                         model.train(mode=was_training)
                         return
+            
             model.train(mode=was_training)
+
 
     def set_parameter_requires_grad(self, model, feature_extraction=False):
         if feature_extraction:
             for param in model.parameters():
                 param.requires_grad = False
 
-    def show_pretrained_model(self, model_path):
 
-        self.load_pretrained(model_path)
+    def show_pretrained_model(self, model_name=None):
+
+        if not model_name:
+            latest_model_name = self.get_latest_model()
+            self.load_pretrained(latest_model_name) # if it fails, load latest model
+        else:
+            self.load_pretrained(model_name) # try to load specified model
+            
+
         self.visualize_model(self.model_ft)
         plt.show()
 
-    def load_pretrained(self, model_path):
+
+    def load_pretrained(self, model_name):
+
+        model_path = os.path.join(self.savepath, model_name)
 
         if not os.path.isfile(model_path):
-            print(f"No model at {model_path}. Aborting...")
-            return
+            raise Exception("No model named at {}".format(model_path))
         
         try:
             self.model_ft.load_state_dict(torch.load(model_path))
@@ -253,3 +271,12 @@ class Libido:
             self.model_ft.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
 
 
+    def get_latest_model(self):
+
+        all_models = [os.path.join(self.savepath, m) for m in os.listdir(self.savepath) if not os.path.isdir(m)]
+        
+        latest_model_path = max(all_models, key=os.path.getmtime)
+        
+        print(f"latest_model_path {latest_model_path}")
+        
+        return os.path.basename(latest_model_path)

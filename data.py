@@ -37,7 +37,7 @@ def rename(folder):
         destination = os.path.join(folder, str(i)+extension)
         
         os.rename(source, destination)
-        counter ++ 
+        counter += 1 
 
     print("Renamed "+str(counter)+" files in "+folder)
 
@@ -50,6 +50,7 @@ def convert(folder):
 
     assert os.path.isdir(folder), "Invalid data folder"
 
+    counter = 0
     for filename in os.listdir(folder):
         if filename.endswith('.webp') or filename.endswith('.png'):
 
@@ -61,7 +62,9 @@ def convert(folder):
             # Delete webp duplicates
             os.remove(imgpath)
 
-            print('Converted '+str(filename))
+            counter += 1
+
+    print('Converted '+str(counter)+' files in '+folder)
 
     return True
 
@@ -88,7 +91,7 @@ def remove_duplicates(folder):
     # Remove all the duplicates
     [os.remove(copycat) for copycat in duplicates]
 
-    print('Removed '+str(len(duplicates))+' duplicates')
+    print('Removed '+str(len(duplicates))+' duplicates in '+folder)
     return True
 
 def crop_to_squares(folder):
@@ -151,8 +154,6 @@ def resize(src_folder, des_folder, width=640, height=800):
 
     """ Normalizes src folder images to width*height into des folder """
     """ Assumes src folder's images are '.jpg' format """
-
-    print('\nInitializing resizing subroutine')
 
     assert os.path.isdir(src_folder), "Invalid source data folder"
     if not os.path.isdir(des_folder):
@@ -297,11 +298,8 @@ def setup_entire_dataset(folder, train_test_ratio=0.8):
 
     return True
 
-def new_training_dataset(folder, train_test_ratio=0.8):
-
-    sorted_folder = "./data_sorted/"
+def new_training_dataset(folder, sorted_folder, train_test_ratio=0.8):
     
-    breakpoint()
     # Remove old sorted folder
     if os.path.isdir(sorted_folder): rmtree(sorted_folder) 
 
@@ -311,7 +309,7 @@ def new_training_dataset(folder, train_test_ratio=0.8):
     # Preprocess data
     setup_entire_dataset(sorted_folder)
 
-    return True
+    return sorted_folder
         
 
 # Preprocess left and right folders ()
