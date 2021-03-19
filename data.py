@@ -12,12 +12,13 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 import os
-import cv2
+import face_recognition
 import time
 import subprocess
 from PIL import ImageTk, Image
 from shutil import move, copy, rmtree, copytree
 from utilities import *
+import matplotlib.pyplot as plt
 
 
 def rename(folder):
@@ -112,49 +113,44 @@ def crop_to_squares(folder):
 
     return True
 
-def keep_only_pics_with_people(folder):
+def remove_pics_with_no_people(folder):
 
-    """ TODO not really removing anything yet, still under testing """
-    """
-    print("Trimming dataset...")
+    """ Remove all pictures where no person is detected """
+    
+    assert os.path.isdir(folder), "Invalid data folder"
+    imagefiles = __get_image_names_in(folder)
+    assert len(imagefiles) > 0, "No pictures in folder"
 
-    # List all pictures in folder
-    images = [os.path.join(folder, i) for i in os.listdir(folder)
-              if os.path.isfile(os.path.join(folder, i))
-              and i.endswith(".jpg")
-              or i.endswith(".webp")]
+    garbage = []
+    counter = 0    
+    for i in imagefiles:
+        
+        imagepath = os.path.join(folder, i)
 
-    counter = 0
-    found = False
-    for img in images:
+        image = face_recognition.load_image_file(imagepath)
+        rects = face_recognition.face_locations(image)
 
-        img = cv2.imread(img)
-        img = cv2.resize(img, (1280, 720))
-        boxes, scores, classes, num = odapi.processFrame(img)
+        if len(rects) > 0: # found people
+            
+            if len(rects) == 1: # found exactly one person
+                pass
+            else: # found more than one persons
+                garbage.append(imagepath)
 
-        # Visualization of the results of a detection.
-
-        for i in range(len(boxes)):
-            # Class 1 represents human
-            if classes[i] == 1 and scores[i] > threshold:
-                found=True
-                box = boxes[i]
-                cv2.rectangle(img, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
-
-        if not found:
-            cv2.imshow("preview", img)
-            cv2.waitKey()
         else:
-            found = False
+            garbage.append(imagepath)
 
-    print("Kept %d images" % counter)
-    """
+    [os.remove(pic_with_no_one) for pic_with_no_one in garbage]
+
+    print('Removed '+str(len(garbage))+' pictures with no people in '+folder)
+    
+    return True
 
 def resize(src_folder, des_folder, width=640, height=800):
 
     """ Normalizes src folder images to width*height into des folder """
     """ Assumes src folder's images are '.jpg' format """
-
+    """
     assert os.path.isdir(src_folder), "Invalid source data folder"
     if not os.path.isdir(des_folder):
         os.mkdir(des_folder)
@@ -186,6 +182,7 @@ def resize(src_folder, des_folder, width=640, height=800):
         else:
             continue
     return 1
+    """
 
 
 def split_dataset(folder, train_test_ratio, class_names=["left", "right"]):
@@ -287,7 +284,7 @@ def setup_entire_dataset(folder, train_test_ratio=0.8):
         assert convert(subfolder) == True, "Failed while converting files to jpg"
         assert remove_duplicates(subfolder) == True, "Failed while removing duplicates"
         assert crop_to_squares(subfolder) == True, "Failed while cropping pictures to squares"
-        # assert keep_only_pics_with_people(folder) == True, "Failed while removing pictures with no people"
+        assert remove_pics_with_no_people(subfolder) == True, "Failed while removing pictures with no people"
 
     # Split class folders into train/test folders
     assert split_dataset(folder, train_test_ratio) == True, "Failed while splitting dataset into train/test folders"

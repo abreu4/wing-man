@@ -42,11 +42,11 @@ class Libido:
 
         # Training hyperparameters
         self.num_epochs = 25
-        self.batch_size = 32
+        self.batch_size = 8
         self.pretrained = pretrained
         self.feature_extraction = feature_extraction
 
-        self.initial_learning_rate = 0.011
+        self.initial_learning_rate = 0.001
         self.learning_rate_decay = 0.0005
 
         # Dataset transformations
@@ -83,7 +83,8 @@ class Libido:
         self.model_ft = models.resnet34(pretrained=self.pretrained)
         self.set_parameter_requires_grad(self.model_ft, feature_extraction=self.feature_extraction)
         num_ftrs = self.model_ft.fc.in_features
-        self.model_ft.fc = nn.Linear(num_ftrs, len(self.class_names))
+        num_classes = len(self.class_names)
+        self.model_ft.fc = nn.Linear(num_ftrs, num_classes)
         self.model_ft = self.model_ft.to(self.device)
 
 
@@ -237,6 +238,30 @@ class Libido:
                         return
             
             model.train(mode=was_training)
+
+    def test_model(self):
+
+        latest_model_name = self.get_latest_model()
+        self.load_pretrained(latest_model_name)
+
+        self.model_ft.eval()
+        print(self.model_ft)
+        fig = plt.figure()
+
+        with torch.no_grad():
+            
+            for i, (inputs, labels) in enumerate(self.dataloaders['test']):
+                
+                inputs = inputs.to(self.device)
+                labels = labels.to(self.device)
+
+                outputs = self.model_ft(inputs)
+                print(f'outputs {outputs}')
+                
+                _, preds = torch.max(outputs, 1)
+                print(f'preds {preds}')
+
+                exit()
 
 
     def set_parameter_requires_grad(self, model, feature_extraction=False):

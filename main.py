@@ -1,6 +1,7 @@
 # main.py
 
 import argparse
+import os
 from pyfiglet import Figlet
 from libido import Libido
 from swiper import Swiper
@@ -16,7 +17,7 @@ def main():
 
 	parser.add_argument("mode", type=str, choices=["manual", "train", "test", "auto"], help="See README.md for more info on each mode")
 	parser.add_argument('--just-data', action='store_true')
-	parser.add_argument('--rebuild-dataset', action='store_true')
+	parser.add_argument('--rebuild-dataset', action='store_true', help="Rebuilds new train/test dataset from gathered data")
 	parser.add_argument('--with-model', type=str, help="Specify a trained model. Uses latest by default")
 	
 	args = parser.parse_args()
@@ -36,7 +37,7 @@ def main():
 			print("Preparing new dataset from existing data")
 			dataset = new_training_dataset(DATA_DIR, SORTED_DATA_DIR)
 		else:
-			assert os.path.isdir(dataset), "Invalid training folder (Hint: ommit --rebuild-dataset flag)"
+			assert os.path.isdir(dataset), "No training folder (Hint: use --rebuild-dataset flag)"
 
 		# Initialize CNN model with new dataset
 		libido = Libido(train_data_dir=dataset, trained_models_dir=MODEL_DIR)
