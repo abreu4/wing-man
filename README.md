@@ -6,9 +6,9 @@ Once you train a model on your taste, it swipes possible partners accordingly an
 
 ## Dependencies
 
-* Requires Facebook account
-* Requires Tinder account linked to Facebook account
-* Requires Google Chrome web browser for desktop (>= 89.0)
+* Facebook account
+* Tinder account linked to Facebook account
+* Google Chrome web browser for desktop (>= 89.0)
 
 ## Installation
 
@@ -43,8 +43,9 @@ See ``python main.py -h``for more info
 
 ## Heads up
 A few known limitations, to be addressed in later versions:
-	* Tinder popups will cause unexpected behaviour (ex.: "Add Tinder to your home..."). Just clicking them with the mouse will temporarily fix the issue
-	* Manually delete "__temp__" folder after finishing a manual run of the program
+
+* Tinder popups will cause unexpected behaviour (ex.: "Add Tinder to your home..."). Just clicking them with the mouse will temporarily fix the issue
+* Manually delete "\_\_temp\_\_" folder after finishing a manual run of the program
 
 ## Summary
 This was my first full fledged deep learning project, originally developed around 2019.
