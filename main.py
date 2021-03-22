@@ -28,7 +28,7 @@ def main():
 	f = Figlet(font='slant')
 	print(f.renderText('The Wing Man'))
 
-	# Assign directory variables
+	# Create necessary directories
 	folder_assertions([DATA_DIR, SORTED_DATA_DIR, TMP_DATA_DIR, TMP_DATA_DIR, MODEL_DIR])
 	folder_assertions([os.path.join(SORTED_DATA_DIR, "train/"), os.path.join(SORTED_DATA_DIR, "test/")])
 	folder_assertions([os.path.join(DATA_DIR, "left/"), os.path.join(DATA_DIR, "right/")])
@@ -46,13 +46,13 @@ def main():
 			sorted_data_dir = new_training_dataset(DATA_DIR, SORTED_DATA_DIR)
 			
 
-		# Initialize CNN model with new dataset
+		# Initialize model with new dataset
 		libido = Libido(sorted_data_dir=sorted_data_dir, trained_models_dir=MODEL_DIR, temp_data_dir=TMP_DATA_DIR)
 
 		# Train model on dataset
 		libido.train_model(num_epochs=5)
 
-		return
+		return True
 
 	# Testing mode
 	if args.mode == "test":
@@ -73,12 +73,11 @@ def main():
 		# If valid, log into Tinder web
 		if swiper.tinder_login:
 
-			print("Press 1 to swipe left, 2 to swipe right, any other key to ignore current profile")
-
 			if (args.mode == "auto"):
 				libido = Libido(sorted_data_dir=sorted_data_dir, trained_models_dir=MODEL_DIR, temp_data_dir=TMP_DATA_DIR)
 				swiper.swipe(just_data_extraction=args.just_data, auto=True, lib=libido)
 			else:
+				print("Press 1 to swipe left, 2 to swipe right, any other key to ignore current profile")
 				swiper.swipe(just_data_extraction=args.just_data, auto=False)
 
 		else:
