@@ -150,12 +150,14 @@ class Swiper():
                 if libido is not None:
                     evaluation = libido.infer()
                 else:
-                    c = wait_4_key()
-                    evaluation = keys[c]
+                    pressed = wait_4_key()
+                    try: evaluation = keys[pressed]
+                    except: evaluation = "discard"
+
             else:
                 pressed = wait_4_key()
-                evaluation = keys[pressed]
-
+                try: evaluation = keys[pressed]
+                except: evaluation = "discard"
 
             # Get saved pictures list
             image_names = data.get_image_names_in(self.temp_dir_save)
@@ -163,10 +165,12 @@ class Swiper():
 
             if evaluation == "left":
                 
-                # TODO: change
+                # TODO: terrible approach, change it
                 if not auto:
                     print(f"Move pics to left folder")
                     [shutil.move(image, self.left_dir) for image in image_files]
+                else:
+                    [os.remove(image) for image in image_files]
 
                 # Swipe left
                 ActionChains(self.driver).send_keys(Keys.ARROW_LEFT).perform()
@@ -176,10 +180,12 @@ class Swiper():
 
             elif evaluation == "right":
                 
-                # TODO: change
+                # TODO: terrible approach, change it
                 if not auto:
                     print(f"Move pics to right folder")
                     [shutil.move(image, self.right_dir) for image in image_files]
+                else:
+                    [os.remove(image) for image in image_files]
 
                 # If we're just gathering data, we save right swipes in the 'right' folder, but swipe left instead
                 if just_data_extraction:
@@ -196,10 +202,8 @@ class Swiper():
 
                 done = True
 
-
-            for image in image_files:
-                os.remove(image)
-                print(f"Removed {image}")
+            else:
+                [os.remove(image) for image in image_files]
 
                 ActionChains(self.driver).send_keys(Keys.ARROW_LEFT).perform()
                 time.sleep(0.5)

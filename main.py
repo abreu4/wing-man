@@ -30,7 +30,7 @@ def main():
 
 	# Assign directory variables
 	folder_assertions([DATA_DIR, SORTED_DATA_DIR, TMP_DATA_DIR, TMP_DATA_DIR, MODEL_DIR])
-	folder_assertions([os.path.join(SORTED_DATA_DIR, "left/"), os.path.join(SORTED_DATA_DIR, "right/")])
+	folder_assertions([os.path.join(SORTED_DATA_DIR, "train/"), os.path.join(SORTED_DATA_DIR, "test/")])
 	folder_assertions([os.path.join(DATA_DIR, "left/"), os.path.join(DATA_DIR, "right/")])
 
 	sorted_data_dir = SORTED_DATA_DIR
@@ -75,8 +75,11 @@ def main():
 
 			print("Press 1 to swipe left, 2 to swipe right, any other key to ignore current profile")
 
-			libido = Libido(sorted_data_dir=sorted_data_dir, trained_models_dir=MODEL_DIR, temp_data_dir=TMP_DATA_DIR)
-			swiper.swipe(just_data_extraction=args.just_data, auto=(args.mode == "auto"), lib=libido)
+			if (args.mode == "auto"):
+				libido = Libido(sorted_data_dir=sorted_data_dir, trained_models_dir=MODEL_DIR, temp_data_dir=TMP_DATA_DIR)
+				swiper.swipe(just_data_extraction=args.just_data, auto=True, lib=libido)
+			else:
+				swiper.swipe(just_data_extraction=args.just_data, auto=False)
 
 		else:
 			print('Tinder login failed')

@@ -279,7 +279,6 @@ def setup_entire_dataset(folder, train_test_ratio=0.8):
     for f in class_folders:
 
         subfolder = os.path.join(folder, f)
-        print(f"subfolder:  {subfolder}")
         preprocess_pipeline(subfolder)
         
         
