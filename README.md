@@ -1,6 +1,7 @@
 # The Wing Man
 
-The Wing Man is a automatic tinder CLI which knows "your type". The program runs on top of Tinder web.
+The Wing Man is an automatic tinder CLI which knows "your type". 
+The program runs on top of Tinder web.
 Once you train a model on your taste, it swipes possible partners accordingly and automatically.
 
 ## Dependencies
