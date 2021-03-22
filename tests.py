@@ -5,6 +5,7 @@ from libido import Libido
 DATA_DIR = "./data/" # Should only contain left/ and right/ class folders
 SORTED_DATA_DIR = "./data_sorted/"
 MODEL_DIR = "./trained_models/"
+TMP_DATA_DIR = "./__temp__/"
 
 """ Data processing module tests """
 
@@ -44,10 +45,10 @@ def test_remove_pics_with_no_people(folder=SORTED_DATA_DIR):
 
 
 """ Deep learning model tests """
-def test_test_model():
-	libido = Libido(train_data_dir=SORTED_DATA_DIR, trained_models_dir=MODEL_DIR)
-	libido.test_model()
-	return
+def test_infer():
+	libido = Libido(sorted_data_dir=SORTED_DATA_DIR, temp_data_dir=TMP_DATA_DIR, trained_models_dir=MODEL_DIR)
+	libido.infer()
+	print("Passed test_infer() test")	
 
 
 
@@ -61,5 +62,5 @@ if __name__ == '__main__':
 	test_new_training_dataset()
 	"""
 	#test_test_model()
-	test_remove_pics_with_no_people()
+	test_infer()
 	

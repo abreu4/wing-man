@@ -2,6 +2,7 @@
 
 import argparse
 import os
+from utilities import folder_assertions
 from pyfiglet import Figlet
 from libido import Libido
 from swiper import Swiper
@@ -10,6 +11,7 @@ from data import new_training_dataset
 DATA_DIR = "./data/" # Should only contain left/ and right/ class folders
 SORTED_DATA_DIR = "./data_sorted/"
 MODEL_DIR = "./trained_models/"
+TMP_DATA_DIR = "./__temp__/"
 
 def main():
 	
@@ -17,7 +19,7 @@ def main():
 
 	parser.add_argument("mode", type=str, choices=["manual", "train", "test", "auto"], help="See README.md for more info on each mode")
 	parser.add_argument('--just-data', action='store_true')
-	parser.add_argument('--rebuild-dataset', action='store_true', help="Rebuilds new train/test dataset from gathered data")
+	parser.add_argument('--same-dataset', action='store_true', help="Uses same dataset built for last training run")
 	parser.add_argument('--with-model', type=str, help="Specify a trained model. Uses latest by default")
 	
 	args = parser.parse_args()
@@ -27,20 +29,25 @@ def main():
 	print(f.renderText('The Wing Man'))
 
 	# Assign directory variables
-	dataset = SORTED_DATA_DIR
+	folder_assertions([DATA_DIR, SORTED_DATA_DIR, TMP_DATA_DIR, TMP_DATA_DIR, MODEL_DIR])
+	folder_assertions([os.path.join(SORTED_DATA_DIR, "left/"), os.path.join(SORTED_DATA_DIR, "right/")])
+	folder_assertions([os.path.join(DATA_DIR, "left/"), os.path.join(DATA_DIR, "right/")])
+
+	sorted_data_dir = SORTED_DATA_DIR
 
 	# Training mode
 	if args.mode == "train":
 		
 		# Create and preprocess new dataset from unsorted data directory
-		if args.rebuild_dataset:
-			print("Preparing new dataset from existing data")
-			dataset = new_training_dataset(DATA_DIR, SORTED_DATA_DIR)
+		if args.same_dataset:
+			assert os.path.isdir(dataset), "No training folder"
 		else:
-			assert os.path.isdir(dataset), "No training folder (Hint: use --rebuild-dataset flag)"
+			print("Preparing new dataset from existing data")
+			sorted_data_dir = new_training_dataset(DATA_DIR, SORTED_DATA_DIR)
+			
 
 		# Initialize CNN model with new dataset
-		libido = Libido(train_data_dir=dataset, trained_models_dir=MODEL_DIR)
+		libido = Libido(sorted_data_dir=sorted_data_dir, trained_models_dir=MODEL_DIR, temp_data_dir=TMP_DATA_DIR)
 
 		# Train model on dataset
 		libido.train_model(num_epochs=5)
@@ -50,7 +57,7 @@ def main():
 	# Testing mode
 	if args.mode == "test":
 
-		libido = Libido(train_data_dir=dataset, trained_models_dir=MODEL_DIR)
+		libido = Libido(sorted_data_dir=sorted_data_dir, trained_models_dir=MODEL_DIR, temp_data_dir=TMP_DATA_DIR)
 		
 		if args.with_model: libido.show_pretrained_model(args.with_model)
 		else: libido.show_pretrained_model()
@@ -58,7 +65,7 @@ def main():
 		return True
 
 	print("Logging into your account...")
-	swiper = Swiper(data_dir=DATA_DIR)
+	swiper = Swiper(data_dir=DATA_DIR, temp_data_dir=TMP_DATA_DIR)
 
 	# Log into facebook
 	if swiper.fb_login():
@@ -66,14 +73,10 @@ def main():
 		# If valid, log into Tinder web
 		if swiper.tinder_login:
 
-			if args.mode == "manual":
+			print("Press 1 to swipe left, 2 to swipe right, any other key to ignore current profile")
 
-				print("Press 1 to swipe left, 2 to swipe right, any other key to ignore current profile")
-				swiper.manual_swipe(just_data_extraction=args.just_data)
-
-			elif args.mode == "auto":
-				# TODO
-				return
+			libido = Libido(sorted_data_dir=sorted_data_dir, trained_models_dir=MODEL_DIR, temp_data_dir=TMP_DATA_DIR)
+			swiper.swipe(just_data_extraction=args.just_data, auto=(args.mode == "auto"), lib=libido)
 
 		else:
 			print('Tinder login failed')

@@ -27,7 +27,7 @@ def rename(folder):
     """ TODO: Ensure duplicates get handled correctly """
 
     assert os.path.isdir(folder), "Invalid data folder"
-    imagefiles = __get_image_names_in(folder)
+    imagefiles = get_image_names_in(folder)
     assert len(imagefiles) > 0, "No pictures in folder"
 
     counter = 0
@@ -75,7 +75,7 @@ def remove_duplicates(folder):
     """ Removes duplicate file entries inside folder """
 
     assert os.path.isdir(folder), "Invalid data folder"
-    imagefiles = __get_image_names_in(folder)
+    imagefiles = get_image_names_in(folder)
     assert len(imagefiles) > 1, "No duplicates in folder"
 
     duplicates = []
@@ -100,7 +100,7 @@ def crop_to_squares(folder):
     """ Crops images in 'folder' to central square (inplace) """
 
     assert os.path.isdir(folder), "Invalid data folder"
-    imagefiles = __get_image_names_in(folder)
+    imagefiles = get_image_names_in(folder)
     assert len(imagefiles) > 0, "No pictures in folder"
 
     for i, image in enumerate(imagefiles):
@@ -118,7 +118,7 @@ def remove_pics_with_no_people(folder):
     """ Remove all pictures where no person is detected """
     
     assert os.path.isdir(folder), "Invalid data folder"
-    imagefiles = __get_image_names_in(folder)
+    imagefiles = get_image_names_in(folder)
     assert len(imagefiles) > 0, "No pictures in folder"
 
     garbage = []
@@ -279,12 +279,10 @@ def setup_entire_dataset(folder, train_test_ratio=0.8):
     for f in class_folders:
 
         subfolder = os.path.join(folder, f)
+        print(f"subfolder:  {subfolder}")
+        preprocess_pipeline(subfolder)
         
-        assert rename(subfolder) == True, "Failed while renaming files"
-        assert convert(subfolder) == True, "Failed while converting files to jpg"
-        assert remove_duplicates(subfolder) == True, "Failed while removing duplicates"
-        assert crop_to_squares(subfolder) == True, "Failed while cropping pictures to squares"
-        assert remove_pics_with_no_people(subfolder) == True, "Failed while removing pictures with no people"
+        
 
     # Split class folders into train/test folders
     assert split_dataset(folder, train_test_ratio) == True, "Failed while splitting dataset into train/test folders"
@@ -294,6 +292,18 @@ def setup_entire_dataset(folder, train_test_ratio=0.8):
         rmtree(os.path.join(folder, f))
 
     return True
+
+
+def preprocess_pipeline(folder):
+    
+    #assert rename(folder) == True, "Failed while renaming files"
+    assert convert(folder) == True, "Failed while converting files to jpg"
+    assert remove_duplicates(folder) == True, "Failed while removing duplicates"
+    assert crop_to_squares(folder) == True, "Failed while cropping pictures to squares"
+    assert remove_pics_with_no_people(folder) == True, "Failed while removing pictures with no people"
+
+    return True
+
 
 def new_training_dataset(folder, sorted_folder, train_test_ratio=0.8):
     
@@ -314,9 +324,8 @@ def new_training_dataset(folder, sorted_folder, train_test_ratio=0.8):
 
 ### Helper functions ###
 
-def __get_image_names_in(folder):
+def get_image_names_in(folder):
     return [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f)) and (f.endswith('.jpg') or f.endswith('.webp') or f.endswith('.png'))]
-
 
 def __get_image_source_path(folder, class_name, file):
 	return os.path.join(os.path.join(folder, class_name), file)

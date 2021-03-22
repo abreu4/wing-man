@@ -10,20 +10,12 @@ from PIL import Image
 
 keys = {49: "left", 50: "right"}
 
-
+### Misc helpers
 def filenumber(element):
 
     """ Given relative filepath, returns integer in file's name """
 
     return int(os.path.splitext(element)[0])
-
-
-def file_hash(filepath):
-
-    """ Given filepath, generates unique md5 hash """
-
-    with open(filepath, 'rb') as f:
-        return md5(f.read()).hexdigest()
 
 
 def is_number(s):
@@ -44,6 +36,28 @@ def random_string(stringLength=25):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
+### Folder & file helpers
+def file_hash(filepath):
+
+    """ Given filepath, generates unique md5 hash """
+
+    with open(filepath, 'rb') as f:
+        return md5(f.read()).hexdigest()
+
+def folder_assertions(folders):
+
+    for f in folders:
+        if not os.path.exists(f):
+            try: 
+                os.mkdir(f)
+                print(f"Created {directory} successfully")
+            except:
+                print(f"Failed to create dir {f}")
+
+    return True
+
+
+### Image helpers
 def save_picture_from_url_block(destination, raw_link):
 
     """ Save a picture from a link contained in its style block """
@@ -82,3 +96,7 @@ def get_image_blocks_xpath():
 
 def get_image_container_xpath():
     return './div[@class="Bdrs(8px) Bgz(cv) Bgp(c) StretchedBox"]'
+
+def get_add_to_home_button_xpath():
+    return '//*[@data-testid="addToHomeScreen"]'
+    

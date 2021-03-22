@@ -12,11 +12,13 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 from __future__ import print_function, division
+from utilities import folder_assertions
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import numpy as np
+from scipy import stats
 import torchvision
 from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
@@ -24,30 +26,40 @@ import time
 import os
 import copy
 import uuid
+import data
+
 
 class Libido:
 
 
-    def __init__(self, train_data_dir, trained_models_dir, pretrained=True, feature_extraction=True):
+    def __init__(self, sorted_data_dir, temp_data_dir, trained_models_dir, pretrained=True, feature_extraction=True):
 
         """ Assertions """
-        if not os.path.exists(trained_models_dir): os.mkdir(trained_models_dir)
+        assert sorted_data_dir is not None, "Invalid sorted data folder name"
+        assert temp_data_dir is not None, "Invalid temporary data folder name"
+        assert trained_models_dir is not None, "Invalid trained models folder name"
 
         """ Variables """
 
-        # Paths
-        self.savepath = trained_models_dir
+        # Folders
+        self.sorted_data_dir = sorted_data_dir
+        self.temp_dir = temp_data_dir
+        self.temp_dir_save = os.path.join(self.temp_dir, "1/")
+        self.models_dir = trained_models_dir
         self.trainable_model_path = str(uuid.uuid1()) + ".pth"
-        self.data_dir = train_data_dir
+
+        assert folder_assertions([self.sorted_data_dir, self.temp_dir, self.temp_dir_save, self.models_dir]) == True, "Couldn't create data folders"
+
 
         # Training hyperparameters
         self.num_epochs = 25
-        self.batch_size = 8
+        self.batch_size = 16
         self.pretrained = pretrained
         self.feature_extraction = feature_extraction
 
-        self.initial_learning_rate = 0.001
-        self.learning_rate_decay = 0.0005
+        self.initial_learning_rate = 0.0012
+        self.learning_rate_decay = 0.0001
+        self.learning_rate_decay_rate = 2
 
         # Dataset transformations
         # -> Augmentation and normalization for training
@@ -69,7 +81,7 @@ class Libido:
         }
 
         # Dataset loaders
-        self.image_datasets = {x: datasets.ImageFolder(os.path.join(self.data_dir, x), self.data_transforms[x]) for x in ['train', 'test']}
+        self.image_datasets = {x: datasets.ImageFolder(os.path.join(self.sorted_data_dir, x), self.data_transforms[x]) for x in ['train', 'test']}
         self.dataloaders = {x: torch.utils.data.DataLoader(self.image_datasets[x], batch_size=self.batch_size, shuffle=True, num_workers=4) for x in
                        ['train', 'test']}
         self.dataset_sizes = {x: len(self.image_datasets[x]) for x in ['train', 'test']}
@@ -91,7 +103,7 @@ class Libido:
     def train_model(self, num_epochs=25):
 
         """ Train a model """
-        """ Assumes self.data_dir containes train/left, train/right, test/left, test/right """
+        """ Assumes self.sorted_data_dir containes train/left, train/right, test/left, test/right """
         """ You can obtain this format by using data.setup_entire_dataset """
 
         # Reassign intrinsic parameters
@@ -104,7 +116,7 @@ class Libido:
         optimizer_ft = optim.SGD(self.model_ft.parameters(), lr=self.initial_learning_rate, momentum=0.9)
 
         # Decay LR by a factor of 0.001 every <step_size> epochs
-        exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=1, gamma=self.learning_rate_decay)
+        exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=self.learning_rate_decay_rate, gamma=self.learning_rate_decay)
 
         # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -181,7 +193,7 @@ class Libido:
         print('Best accuracy: {:4f}'.format(best_acc))
 
         # Save after training
-        torch.save(best_model_wts, os.path.join(self.savepath, self.trainable_model_path))
+        torch.save(best_model_wts, os.path.join(self.models_dir, self.trainable_model_path))
 
         # Load model
         model.load_state_dict(best_model_wts)
@@ -239,29 +251,67 @@ class Libido:
             
             model.train(mode=was_training)
 
-    def test_model(self):
+    def _dataloader_from_temp_folder(self):
+        
+        """
+        TODO: Instead of creating this every time a new batch of images needs to be predicted,
+        we could just add this dataloader initialization in the beginning (["train", "test", "infer"]), under the assumption
+        thid dataloader will get updated as files in __temp__ come and go. To be tested.
+
+        """
+        
+        transform = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
+        image_dataset = datasets.ImageFolder(self.temp_dir, transform)
+        dataloader = torch.utils.data.DataLoader(image_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4)
+
+        return dataloader
+        
+
+    def _get_batch_predictions(self, dataloader):
 
         latest_model_name = self.get_latest_model()
         self.load_pretrained(latest_model_name)
-
         self.model_ft.eval()
-        print(self.model_ft)
-        fig = plt.figure()
 
         with torch.no_grad():
             
-            for i, (inputs, labels) in enumerate(self.dataloaders['test']):
+            for i, (inputs, labels) in enumerate(dataloader):
                 
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
 
                 outputs = self.model_ft(inputs)
-                print(f'outputs {outputs}')
-                
-                _, preds = torch.max(outputs, 1)
-                print(f'preds {preds}')
 
-                exit()
+                #_, preds = torch.max(outputs, 1)
+
+                return outputs
+
+                # TODO: Some math to round up the predictions
+
+
+    def infer(self):
+        
+        data.preprocess_pipeline(self.temp_dir_save)
+        dataloader = self._dataloader_from_temp_folder()
+        
+        # Mean approach
+        preds = self._get_batch_predictions(dataloader)
+        mean_per_class = torch.mean(preds, 1)
+        mean_np = torch.mean(mean_per_class)
+        mean = int(np.round(mean_np))
+        
+        result = self.class_names[mean]
+        
+        # Mode approach
+        #value = stats.mode(preds.cpu().detach().numpy())[0]
+
+        print(result)
+        return result
 
 
     def set_parameter_requires_grad(self, model, feature_extraction=False):
@@ -285,7 +335,7 @@ class Libido:
 
     def load_pretrained(self, model_name):
 
-        model_path = os.path.join(self.savepath, model_name)
+        model_path = os.path.join(self.models_dir, model_name)
 
         if not os.path.isfile(model_path):
             raise Exception("No model named at {}".format(model_path))
@@ -298,7 +348,7 @@ class Libido:
 
     def get_latest_model(self):
 
-        all_models = [os.path.join(self.savepath, m) for m in os.listdir(self.savepath) if not os.path.isdir(m)]
+        all_models = [os.path.join(self.models_dir, m) for m in os.listdir(self.models_dir) if not os.path.isdir(m)]
         
         latest_model_path = max(all_models, key=os.path.getmtime)
         

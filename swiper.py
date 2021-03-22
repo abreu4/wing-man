@@ -1,3 +1,5 @@
+import data
+
 import os
 import time
 import shutil
@@ -14,18 +16,18 @@ from selenium.webdriver.chrome.options import Options
 
 class Swiper():
 
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, temp_data_dir):
 
-        if not os.path.isdir(data_dir): os.mkdir(data_dir)
+        assert data_dir is not None, "Invalid data folder name"
+        assert temp_data_dir is not None, "Invalid temporary data folder name"
 
-        TMP_IMAGE_DIR = "./__temp__" # to store limbo pictures (while user hasn't swiped right or left)
-        LEFT_DIR = os.path.join(data_dir, "left") # Left category folder, to save left swiped pictures
-        RIGHT_DIR = os.path.join(data_dir, "right") # Right category folder
+        self.data_dir = data_dir
+        self.temp_dir = temp_data_dir # to store limbo pictures (while user hasn't swiped right or left)
+        self.temp_dir_save = os.path.join(self.temp_dir, "1/")
+        self.left_dir = os.path.join(data_dir, "left") # Left category folder, to save left swiped pictures
+        self.right_dir = os.path.join(data_dir, "right") # Right category folder
 
-        for directory in [TMP_IMAGE_DIR, LEFT_DIR, RIGHT_DIR]:
-            if not os.path.exists(directory):
-                os.mkdir(directory)
-                print(f"Created {directory} successfully")
+        assert folder_assertions([self.data_dir, self.temp_dir, self.temp_dir_save, self.left_dir, self.right_dir]) == True, "Couldn't create data folders"
         
         option = Options()
         option.add_argument("--disable-infobars")
@@ -89,10 +91,12 @@ class Swiper():
         print("Ready to start swiping :)")
         return True
 
-    def manual_swipe(self, just_data_extraction=False):
+    def swipe(self, just_data_extraction=False, auto=True, lib=None):
 
         """ Extracts and labels pictures from profiles """
         """ just_data_extraction flag swipes left even for profiles you labelled "right" - economizes your likes"""
+
+        libido = lib
 
         while True:
 
@@ -100,17 +104,21 @@ class Swiper():
             found_profile = False
             done = False
 
+
             while not found_profile:
                 try:
                     found_profile = self.driver.find_elements_by_xpath(get_current_profile_xpath())
                 except NoSuchElementException:
+                    try:
+                        self.driver(get_add_to_home_button_xpath()).click()
+                    except:
+                        pass
                     pass
-
-            print(f"Found a profile: {found_profile}")
 
             # Find picture blocks inside current profile
             image_blocks = found_profile[0].find_elements_by_xpath(get_image_blocks_xpath())
 
+            counter = 0
             for current_image_block in image_blocks:
 
                 image = None
@@ -124,71 +132,77 @@ class Swiper():
                 # Extract current picture
                 raw_link = image.get_attribute('style')
                 try:
-                    save_picture_from_url_block(TMP_IMAGE_DIR, raw_link)
-                    print(f"Saved picture at {TMP_IMAGE_DIR}")
+                    save_picture_from_url_block(self.temp_dir_save, raw_link)
+                    counter += 1    
                 except:
                     print("Couldn't save picture")
+                    pass
 
                 # Jump to next picture
                 ActionChains(self.driver).send_keys(' ').perform()
 
-
-            image_files = [os.path.join(TMP_IMAGE_DIR, f) for f in os.listdir(TMP_IMAGE_DIR) if os.path.isfile(os.path.join(TMP_IMAGE_DIR, f)) and (f.endswith('.jpg') or f.endswith('.webp'))]
-            print(f"Saved {len(image_files)} pictures")
-
-            while not done:
-
-                c = wait_4_key()
-
-                try:
-                    pressed = keys[c]
-
-                    # Press 1 to swipe left
-                    if keys[c] == "left":
-                        
-                        print(f"Move pics to left folder")
-
-                        [shutil.move(image, LEFT_DIR) for image in image_files]
-
-                        # Swipe left
-                        ActionChains(self.driver).send_keys(Keys.ARROW_LEFT).perform()
-                        time.sleep(0.5)
-                        done = True
+            print(f"Saved {counter} pictures")
 
 
-                    # Press 2 to swipe right
-                    elif keys[c] == "right":
-                        
-                        print(f"Move pics to right folder")
+            # Evaluate
+            # TODO: terrible approach, change it
+            if auto:
+                if libido is not None:
+                    evaluation = libido.infer()
+                else:
+                    c = wait_4_key()
+                    evaluation = keys[c]
+            else:
+                pressed = wait_4_key()
+                evaluation = keys[pressed]
 
-                        [shutil.move(image, RIGHT_DIR) for image in image_files]
 
-                        # If we're just gathering data, we save right swipes in the 'right' folder, but swipe left instead
-                        if just_data_extraction:
-                            
-                            # Swipe left
-                            ActionChains(self.driver).send_keys(Keys.ARROW_LEFT).perform()
-                            time.sleep(0.5)
-                        
-                        else:
-                            
-                            # Swipe right
-                            ActionChains(self.driver).send_keys(Keys.ARROW_RIGHT).perform()
-                            time.sleep(0.5)
+            # Get saved pictures list
+            image_names = data.get_image_names_in(self.temp_dir_save)
+            image_files = [os.path.join(self.temp_dir_save, f) for f in image_names]
 
-                        done = True
+            if evaluation == "left":
+                
+                # TODO: change
+                if not auto:
+                    print(f"Move pics to left folder")
+                    [shutil.move(image, self.left_dir) for image in image_files]
 
-                # Press any other key to ignore 
-                except KeyError:
-                    for image in image_files:
-                            print(f"Removed {image}")
-                            os.remove(image)
+                # Swipe left
+                ActionChains(self.driver).send_keys(Keys.ARROW_LEFT).perform()
+                time.sleep(0.5)
+                done = True
 
+
+            elif evaluation == "right":
+                
+                # TODO: change
+                if not auto:
+                    print(f"Move pics to right folder")
+                    [shutil.move(image, self.right_dir) for image in image_files]
+
+                # If we're just gathering data, we save right swipes in the 'right' folder, but swipe left instead
+                if just_data_extraction:
+                    
+                    # Swipe left
                     ActionChains(self.driver).send_keys(Keys.ARROW_LEFT).perform()
                     time.sleep(0.5)
+                
+                else:
+                    
+                    # Swipe right
+                    ActionChains(self.driver).send_keys(Keys.ARROW_RIGHT).perform()
+                    time.sleep(0.5)
 
-                    done = True
+                done = True
 
 
+            for image in image_files:
+                os.remove(image)
+                print(f"Removed {image}")
 
-        return 1
+                ActionChains(self.driver).send_keys(Keys.ARROW_LEFT).perform()
+                time.sleep(0.5)
+
+
+        return True
