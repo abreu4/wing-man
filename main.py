@@ -8,10 +8,10 @@ from libido import Libido
 from swiper import Swiper
 from data import new_training_dataset
 
-DATA_DIR = "./data/" # Should only contain left/ and right/ class folders
-SORTED_DATA_DIR = "./data_sorted/"
-MODEL_DIR = "./trained_models/"
-TMP_DATA_DIR = "./__temp__/"
+DATA_DIR = "data/" # Should only contain left/ and right/ class folders
+SORTED_DATA_DIR = "data_sorted/"
+MODEL_DIR = "trained_models/"
+TMP_DATA_DIR = "__temp__/"
 
 def main():
 	

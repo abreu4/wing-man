@@ -47,12 +47,15 @@ def file_hash(filepath):
 def folder_assertions(folders):
 
     for f in folders:
+        
         if not os.path.exists(f):
+            
             try: 
                 os.mkdir(f)
-                print(f"Created {directory} successfully")
-            except:
-                print(f"Failed to create dir {f}")
+                print(f"Created {f} successfully")
+            
+            except Exception as e:
+                print(f"Failed to create dir {f} with error {e}")
 
     return True
 

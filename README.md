@@ -10,13 +10,17 @@ It includes training, testing and inference logic (under development), meaning o
 * Requires Google Chrome web browser for desktop (>= 89.0)
 
 - (Tkinter - REMOVE), pytorch, opencv
+
 ## Installation
 
-* conda create --name wingman python=3.8
-* conda activate wingman
-* pip install -r requirements.txt 
+* python -m virtualenv env
+* source env/bin/activate
+* pip install torch==1.8.0+cpu torchvision==0.9.0+cpu torchaudio==0.8.0 -f https://download.pytorch.org/whl/torch_stable.html
+* pip install -r requirements.txt
+
 
 Make sure you have the adequate [chromedriver](https://chromedriver.chromium.org/) for your OS
+
 
 ## Usage
 
