@@ -5,10 +5,9 @@
 # Based on https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html
 #
 # Lots of things could be tweaked here:
-#   - Model learning rate
-#   - Whether to train or to load an existing model
-#   - Which architecture to use
-#   - Different models for different people!
+#   - NN architecture
+#   - Use a model pretrained on face tasks (instead of ImageNet)
+#   - Grid search hyperparameters 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 from __future__ import print_function, division
